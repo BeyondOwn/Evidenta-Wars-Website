@@ -6,6 +6,7 @@ from pandas import read_csv
 from pandas import DataFrame
 import fileinput
 import os
+import win32api
 
 view_all_gangs = {
     "ttb":"tsarbratva",
@@ -31,9 +32,151 @@ parse_war_gangs={
 }
 wars =["wars/war1.csv","wars/war2.csv","wars/war3.csv","wars/war4.csv"]
 def main():
-    cnt=0
-    asd= []
-    turf_names=[]
+    try:
+        cnt=0
+        asd= []
+        turf_names=[]
+        ##prompt
+        date,gang = prompt()
+        ## Sanctiuni scor
+        sanctiuni_scor = input("Sanctionam pe scor? (y/n): ")
+        if sanctiuni_scor == "y" or sanctiuni_scor == "yes" or "y" in sanctiuni_scor :
+            sanctiuni_scoruri = True
+        else:
+            sanctiuni_scoruri = False
+        ##
+        regex_date = re.search(r'^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$',str(date))
+        while (regex_date == None):
+            print('Date must be "DD.MM.YYYY"')
+            date,gang = prompt()
+            regex_date = re.search(r'^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$',str(date))
+        while gang.lower() not in view_all_gangs:
+            print('Gang name Invalid')
+            date,gang = prompt()
+            
+        links = get_war_link(date,view_all_gangs[gang.lower()])
+            
+        while (links == []):
+            print(f'Gangul {gang.upper()} nu a avut waruri in data de {date}')
+            date,gang= prompt()
+            links = get_war_link(date,view_all_gangs[gang.lower()])
+        links.sort()
+        print(links)
+        for x in links:
+            asd.append(parse_war(parse_war_gangs[gang.lower()],x,cnt))
+            cnt+=1
+        ## got the wars/wars1..wars2..etc
+        print("Getting Turf Names")
+        for x in links:
+            turf_names.append(get_turf(x))
+
+        match len(links):
+            case 1:
+                min_sec1 = input(f"Secunde {turf_names[0]}: ")
+                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1)
+            case 2:
+                min_sec1 = input(f"Secunde {turf_names[0]}: ")
+                min_sec2 = input(f"Secunde {turf_names[1]}: ")
+                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2)
+            case 3:
+                min_sec1 = input(f"Secunde {turf_names[0]}: ")
+                min_sec2 = input(f"Secunde {turf_names[1]}: ")
+                min_sec3 = input(f"Secunde {turf_names[2]}: ")
+                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2,min_sec3)
+            case 4:
+                min_sec1 = input(f"Secunde {turf_names[0]}: ")
+                min_sec2 = input(f"Secunde {turf_names[1]}: ")
+                min_sec3 = input(f"Secunde {turf_names[2]}: ")
+                min_sec4 = input(f"Secunde {turf_names[3]}: ")
+                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2,min_sec3,min_sec4)
+        ### Got the scrapper working and into a .csv, now work on the CSV
+        with open("evidenta.csv", "a+") as f:
+                    for x in player_stats:
+                        try:
+                            match len(links):
+                                case 1:
+                                    name,kills,deaths,kd,secunde, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                    f.write(f'{name} {kills} {kd} {secunde} "" "" "" "" "" "" "" "" "" "" {sanctiuneScor}{sanctiunePrezenta}  \n')
+                                case 2:
+                                    name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                    f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} "" "" "" "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
+                                case 3:
+                                    name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                    f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
+                                case 4:
+                                    name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2,kills3,deaths3,kd3,secunde3, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                    f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} {kills3} {kd3} {secunde3} {sanctiuneScor} {sanctiunePrezenta} \n')
+                        except ValueError:
+                            f.write(f"Couldn't unpack values! \n")
+        ### Got them from 4 csvs into 1 csv and now export to excel ###
+        # df = pd.read_csv(txt_file, sep=" ",)
+        # df.to_excel("color.xlsx",startcol=coloana_inceput,columns=["Nume","Scor","Secunde","Prezenta"])
+        match len(links):
+            case 1:
+                writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
+                wb  = writer.book
+                df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde",'a', 'b', 'c', 'd', 'f', 'g' ,'i','k', 'y' ,'z',"sanctiuneScor","sanctiunePrezenta","x",])
+                df.to_excel(writer,index=False, columns=["Nume","Kills","Scor","Secunde",'a', 'b', 'c', 'd', 'f', 'g','i','k', 'y' ,'z',"sanctiuneScor","sanctiunePrezenta","x"], header=["Nume","Kills","Scor","Secunde","","","","","","","","","","sanctiuneScor","sanctiunePrezenta","",""])
+                wb.save(f'{gang}{date}.xlsx')
+                wb.close()
+            case 2:
+                writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
+                wb  = writer.book
+                df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2",'a', 'b', 'c', 'd', 'f', 'g' ,"sanctiuneScor","sanctiunePrezenta","x",])
+                df.to_excel(writer,index=False, columns=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2",'a', 'b', 'c', 'd', 'f', 'g',"sanctiuneScor","sanctiunePrezenta","x"], header=["Nume","Kills","Scor","Secunde","Kills","Scor","Secunde","","","","","","","sanctiuneScor","sanctiunePrezenta","",])
+                wb.save(f'{gang}{date}.xlsx')
+                wb.close()
+            case 3:
+                writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
+                wb  = writer.book
+                df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3",'a','b','c',"sanctiuneScor","sanctiunePrezenta","x"])
+                df.to_excel(writer,index=False, columns=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","a","b","c",'sanctiuneScor',"sanctiunePrezenta","x"], header=["Nume","Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde","","","","sanctiuneScor","sanctiunePrezenta","",])
+                wb.save(f'{gang}{date}.xlsx')
+                wb.close()
+            case 4:
+                writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
+                wb  = writer.book
+                df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","Kills4","Scor4","Secunde4",'sanctiuneScor',"sanctiunePrezenta"])
+                df.to_excel(writer,index=True, index_label="Nume", columns=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","Kills4","Scor4","Secunde4",'sanctiuneScor',"sanctiunePrezenta"], header=["Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde",'sanctiuneScor',"sanctiunePrezenta","",])
+                wb.save(f'{gang}{date}.xlsx')
+                wb.close()
+    
+    # CLEANUP ###
+        cleanup()
+    except Exception:
+        cleanup() 
+    finally:
+        cleanup()
+
+
+# CLEANUP ###
+def cleanup():
+    path_wars_OS = os.getcwd() +"/wars"
+    path_wars = os.listdir(os.getcwd()+ "/wars")
+    path_OS = os.getcwd()
+    path = os.listdir(os.getcwd())
+    for x in path_wars:
+        if x.endswith(".csv"):
+            os.remove(f"{path_wars_OS}/{x}")
+    for x in path:
+        if x.endswith(".csv"):
+            os.remove(f"{path_OS}/{x}")
+    return
+
+def on_exit(signal_type):
+    path_wars_OS = os.getcwd() +"/wars"
+    path_wars = os.listdir(os.getcwd()+ "/wars")
+    path_OS = os.getcwd()
+    path = os.listdir(os.getcwd())
+    for x in path_wars:
+        if x.endswith(".csv"):
+            os.remove(f"{path_wars_OS}/{x}")
+    for x in path:
+        if x.endswith(".csv"):
+            os.remove(f"{path_OS}/{x}")
+   
+    
+def prompt():
     date = input("Data: ")
     if "-" in date:
         date = date.replace("-",".")
@@ -47,112 +190,8 @@ def main():
     # print(date)
     print("Exemple Ganguri: ttb rdt gsb vdt vtb sp avispa 69 elc")
     gang = input("Gang: ")
-    sanctiuni_scor = input("Sanctionam pe scor? (y/n): ")
-    if sanctiuni_scor == "y":
-        sanctiuni_scoruri = True
-    else:
-        sanctiuni_scoruri = False
-    if gang.lower() in view_all_gangs:
-        links = get_war_link(date,view_all_gangs[gang.lower()])
-        links.sort()
-        print(links)
-        for x in links:
-            asd.append(parse_war(parse_war_gangs[gang.lower()],x,cnt))
-            cnt+=1
-        ## got the wars/wars1..wars2..etc
-    print("Getting Turf Names")
-    for x in links:
-        turf_names.append(get_turf(x))
-
-    match len(links):
-        case 1:
-            min_sec1 = input(f"Secunde {turf_names[0]}: ")
-            player_stats = todo(len(links),sanctiuni_scoruri,min_sec1)
-        case 2:
-            min_sec1 = input(f"Secunde {turf_names[0]}: ")
-            min_sec2 = input(f"Secunde {turf_names[1]}: ")
-            player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2)
-        case 3:
-            min_sec1 = input(f"Secunde {turf_names[0]}: ")
-            min_sec2 = input(f"Secunde {turf_names[1]}: ")
-            min_sec3 = input(f"Secunde {turf_names[2]}: ")
-            player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2,min_sec3)
-        case 4:
-            min_sec1 = input(f"Secunde {turf_names[0]}: ")
-            min_sec2 = input(f"Secunde {turf_names[1]}: ")
-            min_sec3 = input(f"Secunde {turf_names[2]}: ")
-            min_sec4 = input(f"Secunde {turf_names[3]}: ")
-            player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2,min_sec3,min_sec4)
-    ### Got the scrapper working and into a .csv, now work on the CSV
-    with open("evidenta.csv", "a+") as f:
-                for x in player_stats:
-                    try:
-                        match len(links):
-                            case 1:
-                                name,kills,deaths,kd,secunde, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
-                                f.write(f'{name} {kills} {kd} {secunde} "" "" "" "" "" "" "" "" "" "" {sanctiuneScor}{sanctiunePrezenta}  \n')
-                            case 2:
-                                name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
-                                f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} "" "" "" "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
-                            case 3:
-                                name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
-                                f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
-                            case 4:
-                                name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2,kills3,deaths3,kd3,secunde3, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
-                                f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} {kills3} {kd3} {secunde3} {sanctiuneScor} {sanctiunePrezenta} \n')
-                    except ValueError:
-                        f.write(f"Couldn't unpack values! \n")
-    ### Got them from 4 csvs into 1 csv and now export to excel ###
-    # df = pd.read_csv(txt_file, sep=" ",)
-    # df.to_excel("color.xlsx",startcol=coloana_inceput,columns=["Nume","Scor","Secunde","Prezenta"])
-    match len(links):
-        case 1:
-            writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
-            wb  = writer.book
-            df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde",'a', 'b', 'c', 'd', 'f', 'g' ,'i','k', 'y' ,'z',"sanctiuneScor","sanctiunePrezenta","x",])
-            df.to_excel(writer,index=False, columns=["Nume","Kills","Scor","Secunde",'a', 'b', 'c', 'd', 'f', 'g','i','k', 'y' ,'z',"sanctiuneScor","sanctiunePrezenta","x"], header=["Nume","Kills","Scor","Secunde","","","","","","","","","","sanctiuneScor","sanctiunePrezenta","",""])
-            wb.save(f'{gang}{date}.xlsx')
-            wb.close()
-        case 2:
-            writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
-            wb  = writer.book
-            df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2",'a', 'b', 'c', 'd', 'f', 'g' ,"sanctiuneScor","sanctiunePrezenta","x",])
-            df.to_excel(writer,index=False, columns=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2",'a', 'b', 'c', 'd', 'f', 'g',"sanctiuneScor","sanctiunePrezenta","x"], header=["Nume","Kills","Scor","Secunde","Kills","Scor","Secunde","","","","","","","sanctiuneScor","sanctiunePrezenta","",])
-            wb.save(f'{gang}{date}.xlsx')
-            wb.close()
-        case 3:
-            writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
-            wb  = writer.book
-            df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3",'a','b','c',"sanctiuneScor","sanctiunePrezenta","x"])
-            df.to_excel(writer,index=False, columns=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","a","b","c",'sanctiuneScor',"sanctiunePrezenta","x"], header=["Nume","Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde","","","","sanctiuneScor","sanctiunePrezenta","",])
-            wb.save(f'{gang}{date}.xlsx')
-            wb.close()
-        case 4:
-            writer = ExcelWriter('color.xlsx',mode='a', if_sheet_exists='overlay', engine='openpyxl')
-            wb  = writer.book
-            if sanctiuni_scor:
-                df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","Kills4","Scor4","Secunde4",'sanctiuneScor',"sanctiunePrezenta"])
-                df.to_excel(writer,index=True, index_label="Nume", columns=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","Kills4","Scor4","Secunde4",'sanctiuneScor',"sanctiunePrezenta"], header=["Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde",'sanctiuneScor',"sanctiunePrezenta","",])
-            else:
-                df = read_csv("evidenta.csv", sep=" ", names=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","Kills4","Scor4","Secunde4",'sanctiuneScor',"sanctiunePrezenta"])
-                df.to_excel(writer,index=True, index_label="Nume", columns=["Nume","Kills","Scor","Secunde","Kills2","Scor2","Secunde2","Kills3","Scor3","Secunde3","Kills4","Scor4","Secunde4",'sanctiuneScor',"sanctiunePrezenta"], header=["Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde","Kills","Scor","Secunde",'sanctiuneScor',"sanctiunePrezenta","",])
-            wb.save(f'{gang}{date}.xlsx')
-            wb.close()
-
-    # CLEANUP ###
-    path_wars_OS = os.getcwd() +"/wars"
-    path_wars = os.listdir(os.getcwd()+ "/wars")
-    path_OS = os.getcwd()
-    path = os.listdir(os.getcwd())
-    for x in path_wars:
-        if x.endswith(".csv"):
-            os.remove(f"{path_wars_OS}/{x}")
-    for x in path:
-        if x.endswith(".csv"):
-            os.remove(f"{path_OS}/{x}")
-   
     
-        
+    return date,gang
     
 def parse_stats(atac_or_defend_players,player_stats,cnt):
     all_elements={}
@@ -253,25 +292,57 @@ def parse_war(gang,link,cnt):
 def get_war_link(date,gang):
     dates=[]
     links=[]
-    pages = [1,2,3,4,5,6,7,8,9,10,]
+    primul=""
+    found = []
+    pages=[]
+    i=0
+    day,month,year = date.split(".")
+    # Get X where "Page 1 of X"
     r = requests.get(f"https://www.rpg.b-zone.ro/wars/viewall/gang/{gang}")
     soup = BeautifulSoup((r.text), 'html.parser')
-    table_full = soup.find("div", class_="tableFull")
-    tr = table_full.find_all('tr')
-    for x in tr:
-        td = x.find_all("td")
-        for d in td:
-            regex = re.search(r'([0-9]{2}\.[0-9]{2}\.[0-9]{4})',str(d))
-            if regex:
-                if regex.group(1) == date:
-                    dates.append(x)
-    if dates:
-        for link in dates:
-            regex2 = re.search(r'\/([0-9]{5})',str(link))
-            if regex2:
-                links.append(f"https://www.rpg.b-zone.ro/wars/view/{regex2.group(1)}")
-    else:
-        print(f'Gangul {gang.upper()} nu a avut waruri in data de {date}')
+    pagination = soup.find("span", class_="showJumper")
+    rgx = re.search(r'Page 1 of ([0-9]{3})',str(pagination))
+    if rgx:
+        iterate = rgx.group(1)
+    for x in range(int(iterate)):
+        i+=1
+        pages.append(i)
+    ##
+    for x in pages:
+        r = requests.get(f"https://www.rpg.b-zone.ro/wars/viewall/gang/{gang}/{x}")
+        soup = BeautifulSoup((r.text), 'html.parser')
+        print("Page: ",x)
+        table_full = soup.find("div", class_="tableFull")
+        tr = table_full.find_all('tr')
+        for x in tr:
+            td = x.find_all("td")
+            for d in td:
+                regex = re.search(r'([0-9]{2}\.[0-9]{2}\.[0-9]{4})',str(d))
+                if regex:
+                    pageDay,pageMonth,pageYear = regex.group(1).split(".") 
+                    if regex.group(1) == date:
+                        found.append("found")
+                        primul = found.index("found")
+                        dates.append(x)
+                        # if len(dates) == 4:
+                        #         for link in dates:
+                        #             regex2 = re.search(r'\/([0-9]{5})',str(link))
+                        #             if regex2:
+                        #                 links.append(f"https://www.rpg.b-zone.ro/wars/view/{regex2.group(1)}")
+                        #         return links
+                    elif pageMonth < month and pageYear == year or pageYear < year:
+                        return links
+                    else:
+                        found.append("cold")
+                        if primul or primul == 0:
+                            if found[primul+found.count("found")] == "cold":
+                                for link in dates:
+                                    regex2 = re.search(r'\/([0-9]{5})',str(link))
+                                    if regex2:
+                                        links.append(f"https://www.rpg.b-zone.ro/wars/view/{regex2.group(1)}")
+                                return links
+                                
+    #print(f'Gangul {gang.upper()} nu a avut waruri in data de {date}')                              
     return links
 
 
@@ -447,7 +518,10 @@ def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4
                 elif sanctiune == 4:
                     sanctionamFW.append(f"{player_stats[x]['name']}")
         
-
+    for x in player_stats:
+            player_stats[x].update({
+                "sanctiuneScor":"",
+            })
     ### SANCTIUNI SCORURI
     if sanctiuni_scoruri == True:
         for x in player_stats:
@@ -482,10 +556,7 @@ def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4
                     })
             
            ## Punem sanctiunea la fiecare sa nu fie probleme la Pandas.to_excel.
-    for x in player_stats:
-            player_stats[x].update({
-                "sanctiuneScor":"",
-            })
+    
             
     for x in player_stats:
         player_stats[x].update({
@@ -527,4 +598,5 @@ def get_turf(link):
                 
     
 if __name__ == "__main__":
+    win32api.SetConsoleCtrlHandler(on_exit,True)
     main()
