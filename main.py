@@ -528,7 +528,3 @@ def get_turf(link):
     
 if __name__ == "__main__":
     main()
-
-
-# python_jobs = results.find_all(
-# "h2", string=lambda text: "python" in text.lower()
