@@ -98,14 +98,35 @@ def main():
                                     name,kills,deaths,kd,secunde, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
                                     f.write(f'{name} {kills} {kd} {secunde} "" "" "" "" "" "" "" "" "" "" {sanctiuneScor}{sanctiunePrezenta}  \n')
                                 case 2:
-                                    name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
-                                    f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} "" "" "" "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
+                                    if len(player_stats[x]) == 7:
+                                        name,kills,deaths,kd,secunde, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} "" "" "" "" "" "" "" "" "" "" {sanctiuneScor}{sanctiunePrezenta}  \n')
+                                    else: 
+                                        name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} "" "" "" "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
                                 case 3:
-                                    name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
-                                    f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
+                                    if len(player_stats[x]) == 7:
+                                        name,kills,deaths,kd,secunde, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} "" "" "" "" "" "" "" "" "" "" {sanctiuneScor}{sanctiunePrezenta}  \n')
+                                    elif len(player_stats[x]) == 11:
+                                        name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} "" "" "" "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
+                                    else:
+                                        name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
                                 case 4:
-                                    name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2,kills3,deaths3,kd3,secunde3, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
-                                    f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} {kills3} {kd3} {secunde3} {sanctiuneScor} {sanctiunePrezenta} \n')
+                                    if len(player_stats[x]) == 7:
+                                        name,kills,deaths,kd,secunde, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} "" "" "" "" "" "" "" "" "" "" {sanctiuneScor}{sanctiunePrezenta}  \n')
+                                    elif len(player_stats[x]) == 11:
+                                        name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} "" "" "" "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
+                                    elif len(player_stats[x]) == 15:
+                                        name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} "" "" "" {sanctiuneScor} {sanctiunePrezenta} \n')
+                                    else:
+                                        name,kills,deaths,kd,secunde,kills1,deaths1,kd1,secunde1,kills2,deaths2,kd2,secunde2,kills3,deaths3,kd3,secunde3, sanctiuneScor, sanctiunePrezenta =player_stats[x].values()
+                                        f.write(f'{name} {kills} {kd} {secunde} {kills1} {kd1} {secunde1} {kills2} {kd2} {secunde2} {kills3} {kd3} {secunde3} {sanctiuneScor} {sanctiunePrezenta} \n')
                         except ValueError:
                             f.write(f"Couldn't unpack values! \n")
         ### Got them from 4 csvs into 1 csv and now export to excel ###
@@ -144,9 +165,11 @@ def main():
     # CLEANUP ###
         cleanup()
     except Exception:
-        cleanup() 
+        cleanup()
     finally:
         cleanup()
+        ...
+
 
 
 # CLEANUP ###
@@ -461,6 +484,7 @@ def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4
         #         f"SANCTIONAT"
         #     })
     sanctiune = 0
+    sanctionam_amenda_1_4 = []
     sanctionam_AV_amenda= []
     sanctionamFW = []
     sanctionam_amenda =[]
@@ -510,7 +534,7 @@ def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4
                     if y == "(ABSENT)":
                         sanctiune +=1
                 if sanctiune == 1:
-                    sanctionam_amenda.append(f"{player_stats[x]['name']}")
+                    sanctionam_amenda_1_4.append(f"{player_stats[x]['name']}")
                 elif sanctiune == 2:
                     sanctionam_AV.append(f"{player_stats[x]['name']}")
                 elif sanctiune == 3:
@@ -573,9 +597,9 @@ def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4
             "sanctiunePrezenta":'"AV"'
         })
 
-    for membru in sanctionam_amenda:
+    for membru in sanctionam_amenda_1_4:
         player_stats[membru].update({
-            "sanctiunePrezenta":'"Amenda $50k"'
+            "sanctiunePrezenta":'"Amenda $25k"'
         })
         
     for membru in sanctionam_AV_amenda:
