@@ -30,11 +30,14 @@ parse_war_gangs={
     "69":"69 Pier Mobs",
     "elc":"El Loco Cartel"
 }
+
 wars =["wars/war1.csv","wars/war2.csv","wars/war3.csv","wars/war4.csv"]
 def main():
     try:
+        lista_invoiri = []
+        lista_inactivitati = []
         cnt=0
-        asd= []
+        asd = []
         turf_names=[]
         ##prompt
         date,gang = prompt()
@@ -63,8 +66,11 @@ def main():
         links.sort()
         print(links)
         for x in links:
-            asd.append(parse_war(parse_war_gangs[gang.lower()],x,cnt))
+            asd = parse_war(parse_war_gangs[gang.lower()],x,cnt,lista_invoiri,lista_inactivitati)
             cnt+=1
+
+        lista_invoiri = asd[0]
+        lista_inactivitati = asd[1]
         ## got the wars/wars1..wars2..etc
         print("Getting Turf Names")
         for x in links:
@@ -73,23 +79,25 @@ def main():
         match len(links):
             case 1:
                 min_sec1 = input(f"Secunde {turf_names[0]}: ")
-                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1)
+                player_stats = todo(len(links),sanctiuni_scoruri,lista_invoiri,lista_inactivitati,min_sec1,)
             case 2:
                 min_sec1 = input(f"Secunde {turf_names[0]}: ")
                 min_sec2 = input(f"Secunde {turf_names[1]}: ")
-                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2)
+                player_stats = todo(len(links),sanctiuni_scoruri,lista_invoiri,lista_inactivitati,min_sec1,min_sec2,)
             case 3:
                 min_sec1 = input(f"Secunde {turf_names[0]}: ")
                 min_sec2 = input(f"Secunde {turf_names[1]}: ")
                 min_sec3 = input(f"Secunde {turf_names[2]}: ")
-                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2,min_sec3)
+                player_stats = todo(len(links),sanctiuni_scoruri,lista_invoiri,lista_inactivitati,min_sec1,min_sec2,min_sec3,)
             case 4:
                 min_sec1 = input(f"Secunde {turf_names[0]}: ")
                 min_sec2 = input(f"Secunde {turf_names[1]}: ")
                 min_sec3 = input(f"Secunde {turf_names[2]}: ")
                 min_sec4 = input(f"Secunde {turf_names[3]}: ")
-                player_stats = todo(len(links),sanctiuni_scoruri,min_sec1,min_sec2,min_sec3,min_sec4)
+                player_stats = todo(len(links),sanctiuni_scoruri,lista_invoiri,lista_inactivitati,min_sec1,min_sec2,min_sec3,min_sec4,)
         ### Got the scrapper working and into a .csv, now work on the CSV
+        # print("invoiri: ",lista_invoiri)
+        # print("inactivitati: ",lista_inactivitati)
         with open("evidenta.csv", "a+") as f:
                     for x in player_stats:
                         try:
@@ -250,13 +258,14 @@ def parse_stats(atac_or_defend_players,player_stats,cnt):
     return all_elements
         
             
-def parse_war(gang,link,cnt):
+def parse_war(gang,link,cnt,lista_invoiri,lista_inactivitati):
     true_elements = {}
     attacker = False
     defender = False
     atac_players=[]
     defend_players=[]
     player_stats=[]
+   
     r = requests.get(link)
     soup = BeautifulSoup(r.text,'html.parser')
     war_top = soup.find("div", class_='viewWarTop')
@@ -283,6 +292,21 @@ def parse_war(gang,link,cnt):
                 if scor:
                     player_stats.append(scor.group(1))
                     ########################################
+                invoire = y.find("span",{'title':'Absence Request Approved'})
+                if invoire:
+                    if nume_jucator.group(1) in lista_invoiri:
+                        pass
+                    else:
+                        # print("Invoire gasita la: ",nume_jucator.group(1))
+                        lista_invoiri.append(nume_jucator.group(1))
+                inactivitate = x.find("span",{'title':'Inactivity Request Approved'}) #data-original-title="Inactivity Request Approved"
+                if inactivitate:
+                    if nume_jucator.group(1) in lista_inactivitati:
+                        pass
+                    else:
+                        # print("Inactivitate gasita la: ",nume_jucator.group(1))
+                        lista_inactivitati.append(nume_jucator.group(1))
+                #lista_inactivitati
         true_elements = parse_stats(atac_players,player_stats,cnt)
         
     
@@ -301,9 +325,24 @@ def parse_war(gang,link,cnt):
                 scor = re.search(r'<td>(-?[0-9]+)<\/td>',str(y))
                 if scor:
                     player_stats.append(scor.group(1))
+                invoire = y.find("span",{'title':'Absence Request Approved'})
+                if invoire:
+                    if nume_jucator.group(1) in lista_invoiri:
+                        pass
+                    else:
+                        # print("Invoire gasita la: ",nume_jucator.group(1))
+                        lista_invoiri.append(nume_jucator.group(1))
+                inactivitate = x.find("span",{'title':'Inactivity Request Approved'}) #data-original-title="Inactivity Request Approved"
+                if inactivitate:
+                    if nume_jucator.group(1) in lista_inactivitati:
+                        pass
+                    else:
+                        # print("Inactivitate gasita la: ",nume_jucator.group(1))
+                        lista_inactivitati.append(nume_jucator.group(1))
                     ########################################
         true_elements=parse_stats(defend_players,player_stats,cnt)
-    return true_elements
+    
+    return lista_invoiri,lista_inactivitati
     print("######################################################################################################")
     # if attacker:
     #     for x in atac_players:
@@ -369,7 +408,7 @@ def get_war_link(date,gang):
     return links
 
 
-def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4=0):
+def todo(link_length,sanctiuni_scoruri,lista_invoiri,lista_inactivitati,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4=0):
     names =set()
     counter = 0
     n=0
@@ -578,7 +617,14 @@ def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4
                 player_stats[membru].update({
                     "sanctiuneScor":f'"FW"'
                     })
-            
+        for membru in lista_invoiri:
+            player_stats[membru].update({
+                    "sanctiuneScor":f'"INVOIT"'
+                    })
+        for membru in lista_inactivitati:
+            player_stats[membru].update({
+                    "sanctiuneScor":f'"INACTIVITATE"'
+                    })
            ## Punem sanctiunea la fiecare sa nu fie probleme la Pandas.to_excel.
     
             
@@ -606,7 +652,15 @@ def todo(link_length,sanctiuni_scoruri,min_sec1=0,min_sec2=0,min_sec3=0,min_sec4
         player_stats[membru].update({
             "sanctiunePrezenta":'"AV + Amenda $50k"'
         })
-        
+    for membru in lista_invoiri:
+        player_stats[membru].update({
+            "sanctiunePrezenta":'"INVOIT"'
+        })
+    for membru in lista_inactivitati:
+        player_stats[membru].update({
+            "sanctiunePrezenta":'"INACTIVITATE"'
+        })
+    
     # print(player_stats)
     return player_stats
         
