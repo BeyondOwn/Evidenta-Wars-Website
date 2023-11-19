@@ -58,13 +58,13 @@ def main():
             date,gang = prompt()
             
         links = get_war_link(date,view_all_gangs[gang.lower()])
+        print("Links: ",links)
             
         while (links == []):
             print(f'Gangul {gang.upper()} nu a avut waruri in data de {date}')
             date,gang= prompt()
             links = get_war_link(date,view_all_gangs[gang.lower()])
         links.sort()
-        print(links)
         for x in links:
             asd = parse_war(parse_war_gangs[gang.lower()],x,cnt,lista_invoiri,lista_inactivitati)
             cnt+=1
@@ -381,11 +381,19 @@ def get_war_link(date,gang):
             for d in td:
                 regex = re.search(r'([0-9]{2}\.[0-9]{2}\.[0-9]{4})',str(d))
                 if regex:
-                    pageDay,pageMonth,pageYear = regex.group(1).split(".") 
+                    pageDay,pageMonth,pageYear = regex.group(1).split(".")
                     if regex.group(1) == date:
+                        # print("pageDay: ",pageDay)
+                        # print("pageMonth: ",pageMonth)
+                        # print("pageYear: ",pageYear)
+                        # print("Day: ",day)
+                        # print("Month: ",month)
+                        # print("Year: ",year)
                         found.append("found")
                         primul = found.index("found")
                         dates.append(x)
+                        # print("Found: ",found)
+                        # print("primul: ",primul)
                         # if len(dates) == 4:
                         #         for link in dates:
                         #             regex2 = re.search(r'\/([0-9]{5})',str(link))
@@ -393,12 +401,20 @@ def get_war_link(date,gang):
                         #                 links.append(f"https://www.rpg.b-zone.ro/wars/view/{regex2.group(1)}")
                         #         return links
                     elif pageMonth < month and pageYear == year or pageYear < year:
+                        if dates:
+                            for link in dates:
+                                    # print("Dates: ",link)
+                                    regex2 = re.search(r'\/([0-9]{5})',str(link))
+                                    if regex2:
+                                        links.append(f"https://www.rpg.b-zone.ro/wars/view/{regex2.group(1)}")
                         return links
                     else:
                         found.append("cold")
+                        # print("Found: ",found)
                         if primul or primul == 0:
                             if found[primul+found.count("found")] == "cold":
                                 for link in dates:
+                                    # print("Dates: ",link)
                                     regex2 = re.search(r'\/([0-9]{5})',str(link))
                                     if regex2:
                                         links.append(f"https://www.rpg.b-zone.ro/wars/view/{regex2.group(1)}")
