@@ -283,7 +283,7 @@ def parse_war(gang,link,cnt,lista_invoiri,lista_inactivitati):
         tr = attacker_players.find_all('tr')
         for x in tr:
             a = x.find_all('a')
-            nume_jucator = re.search(r'\/players\/general\/([\.\$\_\?@\[]*\w+[_\.@\[]*\w*[\.@\]]*\w*)"',str(a))
+            nume_jucator = re.search(r'\/players\/general\/(.*?)"',str(a))
             if nume_jucator:
                 atac_players.append(nume_jucator.group(1))
             td = x.find_all('td')
@@ -317,7 +317,7 @@ def parse_war(gang,link,cnt,lista_invoiri,lista_inactivitati):
         tr = defender_players.find_all('tr')
         for x in tr:
             a = x.find_all('a')
-            nume_jucator = re.search(r'\/players\/general\/([\.\$\_\?@\[]*\w+[_\.@\[]*\w*[\.@\]]*\w*)"',str(a))
+            nume_jucator = re.search(r'\/players\/general\/(.*?)"',str(a))
             if nume_jucator:
                 defend_players.append(nume_jucator.group(1))
             td = x.find_all('td')
