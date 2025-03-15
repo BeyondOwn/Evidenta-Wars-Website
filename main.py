@@ -56,17 +56,19 @@ def main():
         while gang.lower() not in view_all_gangs:
             print('Gang name Invalid')
             date,gang = prompt()
-            
-        links = get_war_link(date,view_all_gangs[gang.lower()])
+
+        cookies = input("Cookie: ").strip()
+
+        links = get_war_link(date,view_all_gangs[gang.lower()],cookies)
         print("Links: ",links)
             
         while (links == []):
             print(f'Gangul {gang.upper()} nu a avut waruri in data de {date}')
             date,gang= prompt()
-            links = get_war_link(date,view_all_gangs[gang.lower()])
+            links = get_war_link(date,view_all_gangs[gang.lower()],cookies)
         links.sort()
         for x in links:
-            asd = parse_war(parse_war_gangs[gang.lower()],x,cnt,lista_invoiri,lista_inactivitati)
+            asd = parse_war(parse_war_gangs[gang.lower()],x,cnt,lista_invoiri,lista_inactivitati,cookies)
             cnt+=1
 
         lista_invoiri = asd[0]
@@ -74,8 +76,8 @@ def main():
         ## got the wars/wars1..wars2..etc
         print("Getting Turf Names")
         for x in links:
-            turf_names.append(get_turf(x))
-
+            turf_names.append(get_turf(x,cookies))
+        
         match len(links):
             case 1:
                 min_sec1 = input(f"Secunde {turf_names[0]}: ")
@@ -194,6 +196,7 @@ def cleanup():
             os.remove(f"{path_OS}/{x}")
     return
 
+
 def on_exit(signal_type):
     path_wars_OS = os.getcwd() +"/wars"
     path_wars = os.listdir(os.getcwd()+ "/wars")
@@ -258,7 +261,7 @@ def parse_stats(atac_or_defend_players,player_stats,cnt):
     return all_elements
         
             
-def parse_war(gang,link,cnt,lista_invoiri,lista_inactivitati):
+def parse_war(gang,link,cnt,lista_invoiri,lista_inactivitati,cookies):
     true_elements = {}
     attacker = False
     defender = False
@@ -266,7 +269,9 @@ def parse_war(gang,link,cnt,lista_invoiri,lista_inactivitati):
     defend_players=[]
     player_stats=[]
    
-    r = requests.get(link)
+    session = requests.Session()
+    session.cookies.set('bzonerpg', cookies)
+    r = session.get(link)
     soup = BeautifulSoup(r.text,'html.parser')
     war_top = soup.find("div", class_='viewWarTop')
     a = war_top.find_all('a')
@@ -351,7 +356,7 @@ def parse_war(gang,link,cnt,lista_invoiri,lista_inactivitati):
     #     for x in defend_players:
     #         print(x)
 
-def get_war_link(date,gang):
+def get_war_link(date,gang,cookies):
     dates=[]
     links=[]
     primul=""
@@ -360,7 +365,9 @@ def get_war_link(date,gang):
     i=0
     day,month,year = date.split(".")
     # Get X where "Page 1 of X"
-    r = requests.get(f"https://www.rpg.b-zone.ro/wars/viewall/gang/{gang}")
+    session = requests.Session()
+    session.cookies.set('bzonerpg', cookies)
+    r = session.get(f"https://www.rpg.b-zone.ro/wars/viewall/gang/{gang}")
     soup = BeautifulSoup((r.text), 'html.parser')
     pagination = soup.find("span", class_="showJumper")
     rgx = re.search(r'Page 1 of ([0-9]{3})',str(pagination))
@@ -371,7 +378,7 @@ def get_war_link(date,gang):
         pages.append(i)
     ##
     for x in pages:
-        r = requests.get(f"https://www.rpg.b-zone.ro/wars/viewall/gang/{gang}/{x}")
+        r = session.get(f"https://www.rpg.b-zone.ro/wars/viewall/gang/{gang}/{x}")
         soup = BeautifulSoup((r.text), 'html.parser')
         print("Page: ",x)
         table_full = soup.find("div", class_="tableFull")
@@ -680,14 +687,15 @@ def todo(link_length,sanctiuni_scoruri,lista_invoiri,lista_inactivitati,min_sec1
     # print(player_stats)
     return player_stats
         
-def get_turf(link):
-    r = requests.get(link)
+def get_turf(link,cookies):
+    session = requests.Session()
+    session.cookies.set('bzonerpg', cookies)
+    r = session.get(link)
     soup = BeautifulSoup((r.text), 'html.parser')
     war_page = soup.find("div", class_="viewWarPage")
     turf_div = war_page.find('div', style='text-align: center')
-    turf = re.search(r'Turf:\s+(\w+\s*\w*\s*\w*)<br\/>',str(turf_div))
+    turf = re.search(r'Turf:\s+(\w+\s*\w*\s*\w*)<br>',str(turf_div))
 
-    
     return turf.group(1)
                 
     
